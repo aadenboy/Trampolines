@@ -16,8 +16,6 @@ local running = true
 
 local olderror = error
 
-print(field)
-
 function error(s)
     io.stderr:write(s.."\n") -- stderr moment
     running = false
