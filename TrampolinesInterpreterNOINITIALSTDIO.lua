@@ -8,7 +8,7 @@ local output = ""
 local oldprint = print
 local print = io.write
 
-local file = arg[1]
+local field = arg[1]
 
 local running = true
 
@@ -16,10 +16,6 @@ local olderror = error
 
 function error(s)
     io.stderr:write(s) -- stderr moment
-    running = false
-end
-
-if string.sub(file, -5, -1) ~= "tramp" and string.sub(file, -3, -1) ~= "txt" then
     running = false
 end
 
@@ -45,18 +41,6 @@ _G.math.sign = function(n, zerosign)
         return 1
     end
     return zerosign
-end
-
-local field = "no"
-
-if running then
-    io.input(file)
-
-    field = io.read("*all")
-
-    io.input(io.stdin)
-else
-    error("The inputted file must be a valid .tramp or .txt file. You gave an invalid file.")
 end
 
 local lines = string.split(field, "\r\n")
