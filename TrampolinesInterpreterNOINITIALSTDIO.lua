@@ -8,7 +8,7 @@ local output = ""
 local oldprint = print
 local print = io.write
 
-local f = io.open(filename, "r")
+local f = io.open(arg[1], "r")
 local field = f:read("*all")
 f:close()
 
