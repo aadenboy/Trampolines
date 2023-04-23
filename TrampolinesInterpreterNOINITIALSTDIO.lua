@@ -18,7 +18,7 @@ local olderror = error
 
 function error(s)
     io.stderr:write(s.."\n") -- stderr moment
-    running = false
+    os.exit(1)
 end
 
 _G.string.split = function(inputstr, sep)
@@ -160,7 +160,7 @@ end
 
 local collisions = {
     ["35"] = function() -- #
-        running = false
+        os.exit()
     end,
     ["124"] = function() -- -
         vel.x = vel.x * -1
