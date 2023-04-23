@@ -29,7 +29,7 @@ local running = true
 local olderror = error
 
 function error(s)
-    print(s)
+    io.stderr:write(s) -- stderr moment
     running = false
 end
 
