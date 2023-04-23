@@ -8,7 +8,7 @@ local output = ""
 local oldprint = print
 local print = io.write
 
-local field = arg[1]
+local field = io.write(arg[1])
 
 local running = true
 
