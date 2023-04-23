@@ -30,7 +30,7 @@ local olderror = error
 
 function error(s)
     io.stderr:write(s) -- stderr moment
-    running = false
+    os.exit(1)
 end
 
 if string.sub(file, -5, -1) ~= "tramp" and string.sub(file, -3, -1) ~= "txt" then
@@ -133,6 +133,28 @@ local stack = {
 }
 local stackpointer = 1
 
+local function showstack()
+    local s = ""
+    for i,v in ipairs(stack) do
+        if stackpointer == i then
+            s = s.."> "
+        end
+        s = s.."Stack "..i..": "
+        for _,t in ipairs(v) do
+            if t > 31 and t < 256 then
+                s = s..t.." ("..string.byte(t)..")\t"
+            elseif t > -1 and t < 32 then
+                local list = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "DD", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"}
+                s = s..t.." ("..list[t+1]..")\t"
+            else
+                s = s..t.."\t"
+            end
+        end
+        s = s.."\n"
+    end
+    return string.sub(s, 1, -2)
+end
+
 function push(stacknum, num)
     stack[stacknum][#stack[stacknum]+1] = num
 end
@@ -164,31 +186,9 @@ function retrieve(stacknum, place)
     return stack[stacknum][place]
 end
 
-local function showstack()
-    local s = ""
-    for i,v in ipairs(stack) do
-        if stackpointer == i then
-            s = s.."> "
-        end
-        s = s.."Stack "..i..": "
-        for _,t in ipairs(v) do
-            if t > 31 and t < 256 then
-                s = s..t.." ("..string.byte(t)..")\t"
-            elseif t > -1 and t < 32 then
-                local list = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "DD", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"}
-                s = s..t.." ("..list[t+1]..")\t"
-            else
-                s = s..t.."\t"
-            end
-        end
-        s = s.."\n"
-    end
-    return string.sub(s, 1, -2)
-end
-
 local collisions = {
     ["35"] = function() -- #
-        running = false
+        os.exit()
     end,
     ["124"] = function() -- -
         vel.x = vel.x * -1
