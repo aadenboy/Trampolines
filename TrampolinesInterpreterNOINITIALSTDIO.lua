@@ -1,19 +1,27 @@
 -- aaden
 -- physics based esolang :P
+
 local debug = false
+
 local output = ""
+
 local oldprint = print
 local print = io.write
+
 local f = io.open(arg[1], "r")
 local field = f:read("*all")
 f:close()
+
 local running = true
+
 local olderror = error
+
 function error(s)
     io.stderr:write(s.."\n") -- stderr moment
     os.exit(1)
 end
-_G.string.split = function(inputstr, sep)
+
+function string.split(inputstr, sep)
     if sep == nil then
         sep = "%s"
     end
@@ -24,7 +32,8 @@ _G.string.split = function(inputstr, sep)
     return t
 end
 string.split("Hi there fella!", " ") -- lol leftover code from like a while ago
-_G.math.sign = function(n, zerosign)
+
+function math.sign(n, zerosign)
     if zerosign == nil then
         zerosign = 1
     end
@@ -39,18 +48,6 @@ end
 function math.round(n)
     if n - math.floor(n) >= 0.5 then return math.ceil(n) end
     return math.floor(n)
-end
-
-local field = "no"
-
-if running then
-    io.input(file)
-
-    field = io.read("*all")
-
-    io.input(io.stdin)
-else
-    error("The inputted file must be a valid .tramp or .txt file. You gave an invalid file.")
 end
 
 local lines = string.split(field, "\r\n")
