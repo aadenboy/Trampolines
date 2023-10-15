@@ -22,10 +22,6 @@ function error(s)
     os.exit(1)
 end
 
-if string.sub(file, -5, -1) ~= "tramp" and string.sub(file, -3, -1) ~= "txt" then
-    running = false
-end
-
 function string.split(inputstr, sep)
     if sep == nil then
         sep = "%s"
