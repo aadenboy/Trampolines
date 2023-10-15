@@ -1,5 +1,6 @@
 -- aaden
 -- physics based esolang :P
+math.randomseed(os.time())
 
 local debug = false
 
@@ -17,11 +18,15 @@ local running = true
 local olderror = error
 
 function error(s)
-    io.stderr:write(s.."\n") -- stderr moment
+    io.stderr:write(s) -- stderr moment
     os.exit(1)
 end
 
-_G.string.split = function(inputstr, sep)
+if string.sub(file, -5, -1) ~= "tramp" and string.sub(file, -3, -1) ~= "txt" then
+    running = false
+end
+
+function string.split(inputstr, sep)
     if sep == nil then
         sep = "%s"
     end
@@ -33,7 +38,7 @@ _G.string.split = function(inputstr, sep)
 end
 string.split("Hi there fella!", " ") -- lol leftover code from like a while ago
 
-_G.math.sign = function(n, zerosign)
+function math.sign(n, zerosign)
     if zerosign == nil then
         zerosign = 1
     end
@@ -43,6 +48,23 @@ _G.math.sign = function(n, zerosign)
         return 1
     end
     return zerosign
+end
+
+function math.round(n)
+    if n - math.floor(n) >= 0.5 then return math.ceil(n) end
+    return math.floor(n)
+end
+
+local field = "no"
+
+if running then
+    io.input(file)
+
+    field = io.read("*all")
+
+    io.input(io.stdin)
+else
+    error("The inputted file must be a valid .tramp or .txt file. You gave an invalid file.")
 end
 
 local lines = string.split(field, "\r\n")
@@ -113,13 +135,13 @@ local function showstack()
         end
         s = s.."Stack "..i..": "
         for _,t in ipairs(v) do
-            if t > 31 and t < 256 then
-                s = s..t.." ("..string.byte(t)..")\t"
-            elseif t > -1 and t < 32 then
-                local list = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "DD", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"}
-                s = s..t.." ("..list[t+1]..")\t"
+            t2 = math.round(t) % 127
+
+            if t2 > 31 then
+                s = s..t.." ("..string.byte(t2)..")\t"
             else
-                s = s..t.."\t"
+                local list = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "DD", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"}
+                s = s..t.." ("..list[t2+1]..")\t"
             end
         end
         s = s.."\n"
@@ -226,6 +248,24 @@ local collisions = {
     ["48"] = function() -- 0 - 9
         push(stackpointer, tonumber(string.sub(lines[pos.y + 1], pos.x + 1, pos.x + 1)))
     end,
+    ["63"] = function() -- ?
+        push(stackpointer, math.random(0, 1000) / 1000)
+    end,
+    ["40"] = function() -- (
+        local num = math.floor(retrieve(stackpointer))
+        pop(stackpointer)
+        push(stackpointer, num)
+    end,
+    ["41"] = function() -- )
+        local num = math.ceil(retrieve(stackpointer))
+        pop(stackpointer)
+        push(stackpointer, num)
+    end,
+    ["36"] = function() -- $
+        local num = math.round(retrieve(stackpointer))
+        pop(stackpointer)
+        push(stackpointer, num)
+    end,
     ["94"] = function() -- ^
         pop(stackpointer)
     end,
@@ -249,9 +289,9 @@ local collisions = {
     end,
     ["58"] = function() -- :
         if not debug then
-            print(string.char(retrieve(stackpointer)))
+            print(string.char(math.round(retrieve(stackpointer)) % 127))
         else
-            output = output..string.char(retrieve(stackpointer))
+            output = output..string.char(math.round(retrieve(stackpointer)) % 127)
         end
         pop(stackpointer)
     end,
@@ -265,6 +305,11 @@ local collisions = {
     end,
     ["33"] = function() -- !
         local num = retrieve(stackpointer) * -1
+        pop(stackpointer)
+        push(stackpointer, num)
+    end,
+    ["39"] = function() -- '
+        local num = (retrieve(stackpointer))/10
         pop(stackpointer)
         push(stackpointer, num)
     end,
