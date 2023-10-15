@@ -1,28 +1,19 @@
 -- aaden
 -- physics based esolang :P
-math.randomseed(os.time())
-
 local debug = false
-
 local output = ""
-
 local oldprint = print
 local print = io.write
-
 local f = io.open(arg[1], "r")
 local field = f:read("*all")
 f:close()
-
 local running = true
-
 local olderror = error
-
 function error(s)
-    io.stderr:write(s) -- stderr moment
+    io.stderr:write(s.."\n") -- stderr moment
     os.exit(1)
 end
-
-function string.split(inputstr, sep)
+_G.string.split = function(inputstr, sep)
     if sep == nil then
         sep = "%s"
     end
@@ -33,8 +24,7 @@ function string.split(inputstr, sep)
     return t
 end
 string.split("Hi there fella!", " ") -- lol leftover code from like a while ago
-
-function math.sign(n, zerosign)
+_G.math.sign = function(n, zerosign)
     if zerosign == nil then
         zerosign = 1
     end
