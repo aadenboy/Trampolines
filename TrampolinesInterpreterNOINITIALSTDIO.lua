@@ -111,25 +111,7 @@ local stack = {
 local stackpointer = 1
 
 local function showstack()
-    local s = ""
-    for i,v in ipairs(stack) do
-        if stackpointer == i then
-            s = s.."> "
-        end
-        s = s.."Stack "..i..": "
-        for _,t in ipairs(v) do
-            t2 = math.round(t) % 127
-
-            if t2 > 31 then
-                s = s..t.." ("..string.byte(t2)..")\t"
-            else
-                local list = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "DD", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"}
-                s = s..t.." ("..list[t2+1]..")\t"
-            end
-        end
-        s = s.."\n"
-    end
-    return string.sub(s, 1, -2)
+    --
 end
 
 function push(stacknum, num)
@@ -263,9 +245,9 @@ local collisions = {
     end,
     ["58"] = function() -- :
         if not debug then
-            print(utf8.char(math.round(retrieve(stackpointer)) % 127))
+            print(utf8.char(math.round(retrieve(stackpointer))))
         else
-            output = output..utf8.char(math.round(retrieve(stackpointer)) % 127)
+            output = output..utf8.char(math.round(retrieve(stackpointer)))
         end
         pop(stackpointer)
     end,
