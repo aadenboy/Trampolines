@@ -147,13 +147,13 @@ local function showstack()
         end
         s = s.."Stack "..i..": "
         for _,t in ipairs(v) do
-            t2 = math.round(t) % 127
+            t2 = math.round(t)
 
             if t2 > 31 then
                 s = s..t.." ("..utf8.char(t2)..")\t"
             else
                 local list = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "DD", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"}
-                s = s..t.." ("..list[t2+1]..")\t"
+                s = s..t.." ("..(list[t2+1] or "???")..")\t"
             end
         end
         s = s.."\n"
@@ -433,7 +433,7 @@ while running do
     end
 
     if debug then
-        oldprint(output.."\n^^^ Output ^^^\nvvv Playing Field vvv\n"..string.sub(field, 0, pos.x + ((pos.y) * (width + 1))).."Q"..string.sub(field, (pos.x + 2) + ((pos.y) * (width + 1))).."\n"..showstack())
+        oldprint("\x1B[2J\x1B[H"..output.."\n^^^ Output ^^^\nvvv Playing Field vvv\n"..string.sub(field, 0, pos.x + ((pos.y) * (width + 1))).."Q"..string.sub(field, (pos.x + 2) + ((pos.y) * (width + 1))).."\n"..showstack())
     end
     pos.x = pos.x + math.sign(vel.x, 0)
     pos.y = pos.y + math.sign(vel.y, 0)
