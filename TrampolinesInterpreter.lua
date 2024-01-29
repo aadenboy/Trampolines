@@ -150,7 +150,7 @@ local function showstack()
             t2 = math.round(t) % 127
 
             if t2 > 31 then
-                s = s..t.." ("..string.byte(t2)..")\t"
+                s = s..t.." ("..utf8.char(t2)..")\t"
             else
                 local list = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "DD", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"}
                 s = s..t.." ("..list[t2+1]..")\t"
@@ -192,6 +192,9 @@ function retrieve(stacknum, place)
     return stack[stacknum][place]
 end
 
+
+print("\x1B[2J\x1b[H")
+
 local collisions = {
     ["35"] = function() -- #
         os.exit()
@@ -229,27 +232,17 @@ local collisions = {
         end
     end,
     ["46"] = function() -- .
-        if #string.split(lines[pos.y + 1], "\"") == 1 then
-            if not debug then
-                print("\n")
-            else
-                output = output.."\n"
-            end
-        else
+        if #string.split(lines[pos.y + 1], "\"") ~= 1 then
             local split = string.split(string.sub(lines[pos.y + 1], pos.x + 1, -1), "\"")
             for i=1, #split, 2 do
                 if string.find(split[i], "%.") ~= nil then
                     if not debug then
                         if split[i+1] ~= nil and string.find(split[i], "%.") == string.len(split[i]) then
                             print(split[i+1])
-                        else
-                            print("\n")
                         end
                     else
                         if split[i+1] ~= nil and string.find(split[i], "%.") == string.len(split[i]) then
                             output = output..split[i+1]
-                        else
-                            output = output.."\n"
                         end
                     end
                     break
@@ -301,9 +294,9 @@ local collisions = {
     end,
     ["58"] = function() -- :
         if not debug then
-            print(string.char(math.round(retrieve(stackpointer)) % 127))
+            print(utf8.char(math.round(retrieve(stackpointer))))
         else
-            output = output..string.char(math.round(retrieve(stackpointer)) % 127)
+            output = output..utf8.char(math.round(retrieve(stackpointer)))
         end
         pop(stackpointer)
     end,
@@ -321,25 +314,25 @@ local collisions = {
         push(stackpointer, num)
     end,
     ["39"] = function() -- '
-        local num = (retrieve(stackpointer))/10
+        local num = 1/(retrieve(stackpointer))
         pop(stackpointer)
         push(stackpointer, num)
     end,
     ["44"] = function() -- ,
         if stackpointer == 1 then
-            oldprint("Please input a number here: ")
+            print("\nAWAITING NUMBER INPUT: ")
             local input
             repeat
                 input = io.read("*n")
             until tonumber(input) ~= nil
             push(stackpointer, input)
         elseif stackpointer == 2 then
-            oldprint("Please input an ASCII character here: ")
+            print("\nAWAITING ASCII INPUT: ")
             local input
             repeat
                 input = io.read()
             until input ~= nil
-            push(stackpointer, string.byte(input))
+            push(stackpointer, utf8.codepoint(input))
         else
             oldprint("You can only use the \",\" command when selecting stacks 1-2.")
         end
