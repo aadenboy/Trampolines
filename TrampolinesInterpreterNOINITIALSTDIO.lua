@@ -200,12 +200,7 @@ local collisions = {
         end
     end,
     ["46"] = function() -- .
-        if #string.split(lines[pos.y + 1], "\"") == 1 then
-            if not debug then
-                print("\n")
-            else
-                output = output.."\n"
-            end
+        if #string.split(lines[pos.y + 1], "\"") ~= 1 then
         else
             local split = string.split(string.sub(lines[pos.y + 1], pos.x + 1, -1), "\"")
             for i=1, #split, 2 do
@@ -213,14 +208,10 @@ local collisions = {
                     if not debug then
                         if split[i+1] ~= nil and string.find(split[i], "%.") == string.len(split[i]) then
                             print(split[i+1])
-                        else
-                            print("\n")
                         end
                     else
                         if split[i+1] ~= nil and string.find(split[i], "%.") == string.len(split[i]) then
                             output = output..split[i+1]
-                        else
-                            output = output.."\n"
                         end
                     end
                     break
@@ -272,9 +263,9 @@ local collisions = {
     end,
     ["58"] = function() -- :
         if not debug then
-            print(string.char(math.round(retrieve(stackpointer)) % 127))
+            print(utf8.char(math.round(retrieve(stackpointer)) % 127))
         else
-            output = output..string.char(math.round(retrieve(stackpointer)) % 127)
+            output = output..utf8.char(math.round(retrieve(stackpointer)) % 127)
         end
         pop(stackpointer)
     end,
@@ -298,19 +289,17 @@ local collisions = {
     end,
     ["44"] = function() -- ,
         if stackpointer == 1 then
-            oldprint("Please input a number here: ")
             local input
             repeat
                 input = io.read("*n")
             until tonumber(input) ~= nil
             push(stackpointer, input)
         elseif stackpointer == 2 then
-            oldprint("Please input an ASCII character here: ")
             local input
             repeat
                 input = io.read()
             until input ~= nil
-            push(stackpointer, string.byte(input))
+            push(stackpointer, utf8.codepoint(input))
         else
             oldprint("You can only use the \",\" command when selecting stacks 1-2.")
         end
