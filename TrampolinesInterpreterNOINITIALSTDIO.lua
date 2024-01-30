@@ -1,6 +1,12 @@
 -- aaden
 -- physics based esolang :P
 
+--[[
+    ARGS:
+    file        - the file to open
+    useANSI     - determines whether or not to write the initial ANSI code responsible for clearing the console, leave nil for true
+]]
+
 local debug = false
 
 local output = ""
@@ -170,7 +176,9 @@ function retrieve(stacknum, place)
     return stack[stacknum][place]
 end
 
-io.write("\x1B[2J\x1B[H")
+if tostring(arg[2]) ~= "false" then -- using tostring just incase
+    io.write("\x1B[2J\x1B[H")
+end
 
 local collisions = {
     ["35"] = function() -- #
