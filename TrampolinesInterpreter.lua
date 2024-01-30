@@ -30,7 +30,7 @@ local running = true
 local olderror = error
 
 function error(s)
-    io.stderr:write(s) -- stderr moment
+    io.stderr:write(tostring(s)) -- stderr moment
     os.exit(1)
 end
 
@@ -38,12 +38,12 @@ if string.sub(file, -5, -1) ~= "tramp" and string.sub(file, -3, -1) ~= "txt" the
     running = false
 end
 
-function string.split(inputstr, sep)
-    if sep == nil then
-        sep = "%s"
-    end
+function string.split(inputstr, sep, strict)
+    sep = sep or "%s"
+    strict = strict == nil and "+" or (strict and "+" or "*")
+
     local t={}
-    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+    for str in string.gmatch(inputstr, "([^"..sep.."]"..strict..")") do
         table.insert(t, str)
     end
     return t
@@ -126,17 +126,25 @@ local vel = {
 
 -- local objects = "H|#"..string.char(92)..".=-"
 
+local strings = {}
+
 for i,v in ipairs(lines) do
-    if #string.split(v, "\"") % 2 ~= 1 then
-        error("Line "..i.." has one or more incomplete string(s).")
+    strings[i] = {}
+    local len = 0
+
+    if #string.split(v, "\"", false) % 2 == 0 then
+        error("Line "..i.."has an incomplete string.")
+    end
+
+    for o,b in ipairs(string.split(v, "\"", false)) do
+        if o % 2 == 0 then
+            strings[i][#strings[i]+1] = {x = len + 1, content = b}
+        end
+        len = len + #b
     end
 end
 
-local stack = {
-    [1] = {},
-    [2] = {},
-    [3] = {},
-}
+local stack = {{}, {}, {}}
 local stackpointer = 1
 
 local function showstack()
@@ -192,8 +200,7 @@ function retrieve(stacknum, place)
     return stack[stacknum][place]
 end
 
-
-print("\x1B[2J\x1b[H")
+io.write("\x1B[2J\x1B[H")
 
 local collisions = {
     ["35"] = function() -- #
@@ -232,22 +239,30 @@ local collisions = {
         end
     end,
     ["46"] = function() -- .
-        if #string.split(lines[pos.y + 1], "\"") ~= 1 then
-            local split = string.split(string.sub(lines[pos.y + 1], pos.x + 1, -1), "\"")
-            for i=1, #split, 2 do
-                if string.find(split[i], "%.") ~= nil then
-                    if not debug then
-                        if split[i+1] ~= nil and string.find(split[i], "%.") == string.len(split[i]) then
-                            print(split[i+1])
-                        end
-                    else
-                        if split[i+1] ~= nil and string.find(split[i], "%.") == string.len(split[i]) then
-                            output = output..split[i+1]
-                        end
-                    end
-                    break
-                end
+        if #strings[pos.y + 1] == 0 then
+            if debug then
+                output = output.."\n"
+            else  
+                print("\n")
             end
+            return
+        end
+
+        for _,v in ipairs(strings[pos.y + 1]) do
+            if v.x == pos.x + 2 then
+                if debug then
+                    output = output..v.content
+                else
+                    print(v.content)
+                end
+                return
+            end
+        end
+
+        if debug then
+            output = output.."\n"
+        else  
+            print("\n")
         end
     end,
     ["48"] = function() -- 0 - 9
@@ -319,15 +334,42 @@ local collisions = {
         push(stackpointer, num)
     end,
     ["44"] = function() -- ,
+        if #strings[pos.y + 1] ~= 0 then
+            local got = false
+            for _,v in ipairs(strings[pos.y + 1]) do
+                if v.x == pos.x + 2 then
+                    if debug then
+                        output = output..v.content
+                    else
+                        print(v.content)
+                    end
+                    got = true
+                    break
+                end
+            end
+
+            if not got then
+                if debug then
+                    output = output.."\n"
+                else  
+                    print("\n")
+                end
+            end
+        else
+            if debug then
+                output = output..(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
+            else
+                print(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
+            end
+        end
+
         if stackpointer == 1 then
-            print("\nAWAITING NUMBER INPUT: ")
             local input
             repeat
                 input = io.read("*n")
             until tonumber(input) ~= nil
             push(stackpointer, input)
         elseif stackpointer == 2 then
-            print("\nAWAITING ASCII INPUT: ")
             local input
             repeat
                 input = io.read()
@@ -433,7 +475,8 @@ while running do
     end
 
     if debug then
-        oldprint("\x1B[2J\x1B[H"..output.."\n^^^ Output ^^^\nvvv Playing Field vvv\n"..string.sub(field, 0, pos.x + ((pos.y) * (width + 1))).."Q"..string.sub(field, (pos.x + 2) + ((pos.y) * (width + 1))).."\n"..showstack())
+        local split = #string.split(output, "\n", false) == 0 and {""} or string.split(output, "\n", false)
+        oldprint("\x1B[2J\x1B[H"..output.."\x1b[0m\n^^^ Output ^^^\nvvv Playing Field vvv\n"..string.sub(field, 0, pos.x + ((pos.y) * (width + 1))).."Q"..string.sub(field, (pos.x + 2) + ((pos.y) * (width + 1))).."\n"..showstack().."\nBall Position: {"..pos.x..", "..pos.y.."}\nBall Velocity: {"..vel.x..", "..vel.y.."}".."\x1B["..#split..";"..(#split[#split] + 1).."H")
     end
     pos.x = pos.x + math.sign(vel.x, 0)
     pos.y = pos.y + math.sign(vel.y, 0)
