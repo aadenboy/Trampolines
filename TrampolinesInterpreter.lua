@@ -1,12 +1,27 @@
 -- aaden
 -- physics based esolang :P
+
+-- ARGS:
+file    = arg[1]            -- directory | the file to open
+useANSI = arg[2] or true    -- boolean   | write "\x1B[2J\x1B[H" to console? (clears console, here just incase you will extract output)
+prompt  = arg[3] or true    -- boolean   | ask "AWAITING ASCII INPUT: " and or "AWAITING NUMBER INPUT: " when getting input?
+pcustom = arg[4] or true    -- boolean   | ask a custom prompt when getting input?
+pnum    = arg[5] or false   -- boolean   | print what's inputted after a default prompt?
+pcnum   = arg[6] or false   -- boolean   | print what's inputted after a custom prompt?
+
 math.randomseed(os.time())
 
 local debug
 
 local output = ""
 
-local oldprint = print
+local oldprint = function(...) 
+    print(...)
+    for _,v in ipairs({...}) do
+        output = output..v
+    end
+end
+
 local print = function(...)
     io.write(...)
     for _,v in ipairs({...}) do
@@ -67,10 +82,6 @@ end
 local field = "no"
 
 error("The inputted file must be a valid .tramp or .txt file. You gave an invalid file.", not running)
-
-io.input(file)
-field = io.read("*all")
-io.input(io.stdin)
 
 local lines = string.split(field, "\r\n")
 local width = string.len(lines[1])
@@ -174,7 +185,11 @@ function retrieve(stacknum, place)
     return stack[stacknum][place]
 end
 
-io.write("\x1B[2J\x1B[H")
+if useANSI then
+    io.write("\x1B[2J\x1B[H")
+end
+
+output = ""
 
 local collisions = {
     ["35"] = function() -- #
@@ -214,29 +229,15 @@ local collisions = {
     end,
     ["46"] = function() -- .
         if #strings[pos.y + 1] == 0 then
-            if debug then
-                output = output.."\n"
-            else  
-                print("\n")
-            end
+            print("\n")
             return
         end
 
         for _,v in ipairs(strings[pos.y + 1]) do
             if v.x == pos.x + 2 then
-                if debug then
-                    output = output..v.content
-                else
-                    print(v.content)
-                end
+                print(v.content)
                 return
             end
-        end
-
-        if debug then
-            output = output.."\n"
-        else  
-            print("\n")
         end
     end,
     ["48"] = function() -- 0 - 9
@@ -282,19 +283,11 @@ local collisions = {
         push(stackpointer, num)
     end,
     ["58"] = function() -- :
-        if not debug then
-            print(utf8.char(math.round(retrieve(stackpointer))))
-        else
-            output = output..utf8.char(math.round(retrieve(stackpointer)))
-        end
+        print(utf8.char(math.round(retrieve(stackpointer))))
         pop(stackpointer)
     end,
     ["59"] = function() -- ;
-        if not debug then
-            print(tostring(retrieve(stackpointer)))
-        else
-            output = output..tostring(retrieve(stackpointer))
-        end
+        print(tostring(retrieve(stackpointer)))
         pop(stackpointer)
     end,
     ["33"] = function() -- !
@@ -308,39 +301,47 @@ local collisions = {
         push(stackpointer, num)
     end,
     ["44"] = function() -- ,
-        if #strings[pos.y + 1] ~= 0 then
-            local got = false
+        local custom = false
+
+        if #strings[pos.y + 1] ~= 0 and pcustom then
             for _,v in ipairs(strings[pos.y + 1]) do
                 if v.x == pos.x + 2 then
                     print(v.content)
-                    got = true
+                    custom = true
                     break
                 end
             end
 
-            if not got then
-                print("\n")
+            if not custom then
+                print(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
             end
         else
-            print(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
+            if prompt then
+                print(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
+            end
         end
 
+        local input
+
         if stackpointer == 1 then
-            local input
             repeat
                 input = io.read("*n")
             until tonumber(input) ~= nil
-            output = output..input.."\n"
+
             push(stackpointer, input)
         elseif stackpointer == 2 then
-            local input
             repeat
                 input = io.read()
             until input ~= nil
-            output = output..input.."\n"
             push(stackpointer, utf8.codepoint(input))
         else
             oldprint("You can only use the \",\" command when selecting stacks 1-2.")
+        end
+
+        if (pnum and not custom) or (pcustom and custom) then
+            print(input.."\n")
+        else
+            output = output..input.."\n"
         end
     end,
     ["60"] = function() -- <
@@ -394,12 +395,6 @@ local collisions = {
 for i=49, 57 do
     collisions[tostring(i)] = collisions["48"]
 end
-
---[[
-if debug then
-    oldprint("This is the output.\n^^^ OUTPUT ^^^\nvvv Playing Field vvv\n|THIS IS THE PLAYING FIELD o#\n|THIS IS THE PLAYING FIELD \\#\nStack: This\tIs\tThe\tStack\nPress enter to step once\n\n")
-end
-]]
 
 while running do
 
