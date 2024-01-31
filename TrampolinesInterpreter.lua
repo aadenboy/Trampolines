@@ -2,12 +2,11 @@
 -- physics based esolang :P
 
 -- ARGS:
-file    = arg[1]            -- directory | the file to open
-useANSI = arg[2] or true    -- boolean   | write "\x1B[2J\x1B[H" to console? (clears console, here just incase you will extract output)
-prompt  = arg[3] or true    -- boolean   | ask "AWAITING ASCII INPUT: " and or "AWAITING NUMBER INPUT: " when getting input?
-pcustom = arg[4] or true    -- boolean   | ask a custom prompt when getting input?
-pnum    = arg[5] or false   -- boolean   | print what's inputted after a default prompt?
-pcnum   = arg[6] or false   -- boolean   | print what's inputted after a custom prompt?
+useANSI = true    -- boolean   | write "\x1B[2J\x1B[H" to console? (clears console, here just incase you will extract output)
+prompt  = true    -- boolean   | ask "AWAITING ASCII INPUT: " and or "AWAITING NUMBER INPUT: " when getting input?
+pcustom = true    -- boolean   | ask a custom prompt when getting input?
+pnum    = false   -- boolean   | print what's inputted after a default prompt?
+pcnum   = false   -- boolean   | print what's inputted after a custom prompt?
 
 math.randomseed(os.time())
 
