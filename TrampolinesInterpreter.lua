@@ -7,35 +7,42 @@ local debug
 local output = ""
 
 local oldprint = print
-local print = io.write
+local print = function(...)
+    io.write(...)
+    for _,v in ipairs({...}) do
+        output = output..v
+    end
+end
 
 oldprint("Please input the file into here. (Must be .tramp or .txt)\n")
-
 local file = io.read()
 
 oldprint("Debug mode? (y/n)")
+debug = io.read() == "y"
 
-repeat
-    debug = io.read()
-until debug == "y" or debug == "n"
+local dispwidth
+local dispheight
 
-if debug == "y" then
-    debug = true
-else
-    debug = false
+if debug then
+    io.write("\n\nMax display width (default is 100): ")
+    local width = io.read()
+    dispwidth = tonumber(width) ~= nil and math.max(tonumber(width), 5) or 100
+
+    io.write("Max display height (default is 20): ")
+    local height = io.read()
+    dispheight = tonumber(height) ~= nil and math.max(tonumber(height), 5) or 20
 end
 
-local running = true
+local running = string.sub(file, -5, -1) == "tramp" or string.sub(file, -3, -1) == "txt"
 
 local olderror = error
+function error(s, cond)
+    cond = cond == nil and true or cond
 
-function error(s)
-    io.stderr:write(tostring(s)) -- stderr moment
-    os.exit(1)
-end
-
-if string.sub(file, -5, -1) ~= "tramp" and string.sub(file, -3, -1) ~= "txt" then
-    running = false
+    if cond then
+        io.stderr:write(tostring(s)) -- stderr moment
+        os.exit(1)
+    end
 end
 
 function string.split(inputstr, sep, strict)
@@ -48,51 +55,31 @@ function string.split(inputstr, sep, strict)
     end
     return t
 end
-string.split("Hi there fella!", " ") -- lol leftover code from like a while ago
 
 function math.sign(n, zerosign)
-    if zerosign == nil then
-        zerosign = 1
-    end
-    if n < 0 then
-        return -1
-    elseif n > 0 then
-        return 1
-    end
-    return zerosign
+    return n < 0 and -1 or (n > 0 and 1 or (zerosign or 1))
 end
 
 function math.round(n)
-    if n - math.floor(n) >= 0.5 then return math.ceil(n) end
-    return math.floor(n)
+    return n - math.floor(n) >= 0.5 and math.ceil(n) or math.floor(n)
 end
 
 local field = "no"
 
-if running then
-    io.input(file)
+error("The inputted file must be a valid .tramp or .txt file. You gave an invalid file.", not running)
 
-    field = io.read("*all")
-
-    io.input(io.stdin)
-else
-    error("The inputted file must be a valid .tramp or .txt file. You gave an invalid file.")
-end
+io.input(file)
+field = io.read("*all")
+io.input(io.stdin)
 
 local lines = string.split(field, "\r\n")
 local width = string.len(lines[1])
 local height = #lines
 
 for i,v in ipairs(lines) do
-    if string.len(v) ~= width then
-        error("The width of the playing field is inconsistent. First inconsistency found at: Line "..i..".")
-    end
-    if string.sub(lines[i], 1, 1) ~= "|" then
-        error("Line "..i.." is missing the \"|\" character at the start.")
-    end
-    if string.sub(lines[i], -1, -1) ~= "#" then
-        error("Line "..i.." is missing the \"#\" character at the end.")
-    end
+    error("The width of the playing field is inconsistent. First inconsistency found at: Line "..i..".", string.len(v) ~= width)
+    error("Line "..i.." is missing the \"|\" character at the start.", string.sub(lines[i], 1, 1) ~= "|")
+    error("Line "..i.." is missing the \"#\" character at the end.", string.sub(lines[i], -1, -1) ~= "#")
 end
 
 local pos = {
@@ -114,9 +101,7 @@ for i,v in pairs(lines) do
     if foundspawn then break end
 end
 
-if not foundspawn then
-    error("No marble spawnpoint has been found. You need to create one using the \"o\" command.")
-end
+error("No marble spawnpoint has been found. You need to create one using the \"o\" command.", not foundspawn)
 
 local vel = {
     x = 0,
@@ -132,9 +117,7 @@ for i,v in ipairs(lines) do
     strings[i] = {}
     local len = 0
 
-    if #string.split(v, "\"", false) % 2 == 0 then
-        error("Line "..i.."has an incomplete string.")
-    end
+    error("Line "..i.."has an incomplete string.", #string.split(v, "\"", false) % 2 == 0)
 
     for o,b in ipairs(string.split(v, "\"", false)) do
         if o % 2 == 0 then
@@ -174,9 +157,7 @@ function push(stacknum, num)
 end
 
 function pop(stacknum, degree)
-    if #stack[stacknum] == 0 then
-        error("Attempted to pop from stack "..stacknum..", which is an empty stack. Position: ("..pos.x..", "..pos.y..")")
-    end
+    error("Attempted to pop from stack "..stacknum..", which is an empty stack. Position: ("..pos.x..", "..pos.y..")", #stack[stacknum] == 0)
 
     if degree == nil then
         degree = 1
@@ -187,15 +168,8 @@ function pop(stacknum, degree)
 end
 
 function retrieve(stacknum, place)
-    if place == nil then
-        place = #stack[stacknum]
-    else
-        place = #stack[stacknum] - (place - 1)
-    end
-
-    if stack[stacknum][place] == nil then
-        error("Attempted to get value "..place.." from stack "..stacknum..", which has a length of "..#stack[stacknum]..". Position: ("..pos.x..", "..pos.y..")\n"..showstack())
-    end
+    place = place == nil and #stack[stacknum] or #stack[stacknum] - (place - 1)
+    error("Attempted to get value "..place.." from stack "..stacknum..", which has a length of "..#stack[stacknum]..". Position: ("..pos.x..", "..pos.y..")\n"..showstack(), stack[stacknum][place] == nil)
 
     return stack[stacknum][place]
 end
@@ -338,29 +312,17 @@ local collisions = {
             local got = false
             for _,v in ipairs(strings[pos.y + 1]) do
                 if v.x == pos.x + 2 then
-                    if debug then
-                        output = output..v.content
-                    else
-                        print(v.content)
-                    end
+                    print(v.content)
                     got = true
                     break
                 end
             end
 
             if not got then
-                if debug then
-                    output = output.."\n"
-                else  
-                    print("\n")
-                end
+                print("\n")
             end
         else
-            if debug then
-                output = output..(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
-            else
-                print(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
-            end
+            print(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
         end
 
         if stackpointer == 1 then
@@ -368,12 +330,14 @@ local collisions = {
             repeat
                 input = io.read("*n")
             until tonumber(input) ~= nil
+            output = output..input.."\n"
             push(stackpointer, input)
         elseif stackpointer == 2 then
             local input
             repeat
                 input = io.read()
             until input ~= nil
+            output = output..input.."\n"
             push(stackpointer, utf8.codepoint(input))
         else
             oldprint("You can only use the \",\" command when selecting stacks 1-2.")
@@ -438,16 +402,10 @@ end
 ]]
 
 while running do
-    if debug then
-        io.read()
-    end
 
-    if pos.y == height then
-        error("The marble fell to the bottom... Position: ("..pos.x..", "..pos.y..")")
-    end
-    if pos.y == -1 then
-        error("The marble went too high... Position: ("..pos.x..", "..pos.y..")")
-    end
+    error("The marble fell to the bottom... Position: ("..pos.x..", "..pos.y..")", pos.y == height)
+    error("The marble went too high... Position: ("..pos.x..", "..pos.y..")", pos.y == -1)
+
     local funct = "0"
     for i,v in pairs(collisions) do
         if tonumber(i) == string.byte(string.sub(lines[pos.y + 1], pos.x + 1, pos.x + 1)) then
@@ -476,8 +434,23 @@ while running do
 
     if debug then
         local split = #string.split(output, "\n", false) == 0 and {""} or string.split(output, "\n", false)
-        oldprint("\x1B[2J\x1B[H"..output.."\x1b[0m\n^^^ Output ^^^\nvvv Playing Field vvv\n"..string.sub(field, 0, pos.x + ((pos.y) * (width + 1))).."Q"..string.sub(field, (pos.x + 2) + ((pos.y) * (width + 1))).."\n"..showstack().."\nBall Position: {"..pos.x..", "..pos.y.."}\nBall Velocity: {"..vel.x..", "..vel.y.."}".."\x1B["..#split..";"..(#split[#split] + 1).."H")
+        local shown = ""
+
+        for i,v in pairs(lines) do
+
+            if i >= pos.y + 1 - (dispheight / 2) and i <= pos.y + 1 + (dispheight / 2) then
+                if i == pos.y + 1 then
+                    shown = shown..string.sub(v, math.ceil(math.max(pos.x + 1 - (dispwidth / 2), 0)), pos.x).."Q"..string.sub(v, pos.x + 2, math.ceil(math.max(pos.x + 1 + (dispwidth / 2), 0))).."\n"
+                else
+                    shown = shown..string.sub(v, math.ceil(math.max(pos.x + 1 - (dispwidth / 2), 0)), math.ceil(math.max(pos.x + 1 + (dispwidth / 2), 0))).."\n"
+                end
+            end
+        end
+
+        oldprint("\x1B[2J\x1B[H"..output.."\x1b[0m\n^^^ Output ^^^\nvvv Playing Field vvv\n"..shown.."\n"..showstack().."\nBall Position: {"..pos.x..", "..pos.y.."}\nBall Velocity: {"..vel.x..", "..vel.y.."}\nHit enter to advance".."\x1B["..(#split - 1)..";"..(#split[#split] + 1).."H")
+        io.read()
     end
+
     pos.x = pos.x + math.sign(vel.x, 0)
     pos.y = pos.y + math.sign(vel.y, 0)
     vel.y = math.min(vel.y + 0.5, 1)
