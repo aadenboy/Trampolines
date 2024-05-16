@@ -22,24 +22,8 @@ function write(...)
     end
 end
 
-print("Please input the file into here. (Must be .tramp or .txt)\n")
-local file = io.read()
-
-print("Debug mode? (y/n)")
-debug = io.read() == "y"
-
-local dispwidth
-local dispheight
-
-if debug then
-    io.write("\n\nMax display width (default is 100): ")
-    local width = io.read()
-    dispwidth = tonumber(width) ~= nil and math.max(tonumber(width), 5) or 100
-
-    io.write("Max display height (default is 20): ")
-    local height = io.read()
-    dispheight = tonumber(height) ~= nil and math.max(tonumber(height), 5) or 20
-end
+local f = io.open(file, "r"):read("*all")
+f:close()
 
 local running = string.sub(file, -5, -1) == "tramp" or string.sub(file, -3, -1) == "txt"
 
