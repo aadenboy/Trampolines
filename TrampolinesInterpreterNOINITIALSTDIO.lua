@@ -23,7 +23,6 @@ function write(...)
 end
 
 local f = io.open(file, "r"):read("*all")
-f:close()
 
 local running = string.sub(file, -5, -1) == "tramp" or string.sub(file, -3, -1) == "txt"
 
