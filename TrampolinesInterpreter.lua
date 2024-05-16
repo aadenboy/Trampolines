@@ -2,11 +2,11 @@
 -- physics based esolang :P
 
 -- ARGS:
-useANSI = true    -- boolean   | write "\x1B[2J\x1B[H" to console? (clears console, here just incase you will extract output)
-prompt  = true    -- boolean   | ask "AWAITING ASCII INPUT: " and or "AWAITING NUMBER INPUT: " when getting input?
-pcustom = true    -- boolean   | ask a custom prompt when getting input?
-pnum    = false   -- boolean   | print what's inputted after a default prompt?
-pcnum   = false   -- boolean   | print what's inputted after a custom prompt?
+useANSI = true    -- boolean | write "\x1B[2J\x1B[H" to console? (clears console)
+prompt  = true    -- boolean | ask "AWAITING ASCII INPUT: " and or "AWAITING NUMBER INPUT: " when getting input?
+pcustom = true    -- boolean | ask a custom prompt when getting input?
+pnum    = false   -- boolean | print what's inputted after a default prompt?
+pcnum   = false   -- boolean | print what's inputted after a custom prompt?
 
 math.randomseed(os.time())
 
@@ -14,24 +14,17 @@ local debug
 
 local output = ""
 
-local oldprint = function(...) 
-    print(...)
-    for _,v in ipairs({...}) do
-        output = output..v
-    end
-end
-
-local print = function(...)
+function write(...)
     io.write(...)
     for _,v in ipairs({...}) do
         output = output..v
     end
 end
 
-oldprint("Please input the file into here. (Must be .tramp or .txt)\n")
+print("Please input the file into here. (Must be .tramp or .txt)\n")
 local file = io.read()
 
-oldprint("Debug mode? (y/n)")
+print("Debug mode? (y/n)")
 debug = io.read() == "y"
 
 local dispwidth
@@ -61,7 +54,7 @@ end
 
 function string.split(inputstr, sep, strict)
     sep = sep or "%s"
-    strict = strict == nil and "+" or (strict and "+" or "*")
+    strict = strict == false and "*" or "+"
 
     local t={}
     for str in string.gmatch(inputstr, "([^"..sep.."]"..strict..")") do
@@ -78,7 +71,7 @@ function math.round(n)
     return n - math.floor(n) >= 0.5 and math.ceil(n) or math.floor(n)
 end
 
-local field = "no"
+local field = io.open(file):read("*a")
 
 error("The inputted file must be a valid .tramp or .txt file. You gave an invalid file.", not running)
 
@@ -87,7 +80,7 @@ local width = string.len(lines[1])
 local height = #lines
 
 for i,v in ipairs(lines) do
-    error("The width of the playing field is inconsistent. First inconsistency found at: Line "..i..".", string.len(v) ~= width)
+    error("The width of the playing field is inconsistent. First inconsistency found at: "..i..".", string.len(v) ~= width)
     error("Line "..i.." is missing the \"|\" character at the start.", string.sub(lines[i], 1, 1) ~= "|")
     error("Line "..i.." is missing the \"#\" character at the end.", string.sub(lines[i], -1, -1) ~= "#")
 end
@@ -107,7 +100,7 @@ for i,v in pairs(lines) do
             if string.sub(v, j, j) == "o" and not instr then pos.x = j - 1 pos.y = i - 1 foundspawn = true break end
         end
     end
-    
+   
     if foundspawn then break end
 end
 
@@ -150,7 +143,7 @@ local function showstack()
         for _,t in ipairs(v) do
             t2 = math.round(t)
 
-            if t2 > 31 then
+            if t2 > 31 and t2 < 1112064 then
                 s = s..t.." ("..utf8.char(t2)..")\t"
             else
                 local list = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "DD", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"}
@@ -228,13 +221,13 @@ local collisions = {
     end,
     ["46"] = function() -- .
         if #strings[pos.y + 1] == 0 then
-            print("\n")
+            write("\n")
             return
         end
 
         for _,v in ipairs(strings[pos.y + 1]) do
             if v.x == pos.x + 2 then
-                print(v.content)
+                write(v.content)
                 return
             end
         end
@@ -282,11 +275,11 @@ local collisions = {
         push(stackpointer, num)
     end,
     ["58"] = function() -- :
-        print(utf8.char(math.round(retrieve(stackpointer))))
+        write(utf8.char(math.round(retrieve(stackpointer))))
         pop(stackpointer)
     end,
     ["59"] = function() -- ;
-        print(tostring(retrieve(stackpointer)))
+        write(tostring(retrieve(stackpointer)))
         pop(stackpointer)
     end,
     ["33"] = function() -- !
@@ -305,18 +298,18 @@ local collisions = {
         if #strings[pos.y + 1] ~= 0 and pcustom then
             for _,v in ipairs(strings[pos.y + 1]) do
                 if v.x == pos.x + 2 then
-                    print(v.content)
-                    custom = true
+                    write(v.content)
+                    custom = v.content
                     break
                 end
             end
 
             if not custom then
-                print(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
+                write(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
             end
         else
             if prompt then
-                print(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
+                write(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
             end
         end
 
@@ -334,11 +327,11 @@ local collisions = {
             until input ~= nil
             push(stackpointer, utf8.codepoint(input))
         else
-            oldprint("You can only use the \",\" command when selecting stacks 1-2.")
+            write("You can only use the \",\" command when selecting stacks 1-2.")
         end
 
-        if (pnum and not custom) or (pcustom and custom) then
-            print(input.."\n")
+        if (pnum and not custom) or (pcnum and custom) then
+            write(input.."\n")
         else
             output = output..input.."\n"
         end
@@ -441,7 +434,7 @@ while running do
             end
         end
 
-        oldprint("\x1B[2J\x1B[H"..output.."\x1b[0m\n^^^ Output ^^^\nvvv Playing Field vvv\n"..shown.."\n"..showstack().."\nBall Position: {"..pos.x..", "..pos.y.."}\nBall Velocity: {"..vel.x..", "..vel.y.."}\nHit enter to advance".."\x1B["..(#split - 1)..";"..(#split[#split] + 1).."H")
+        print("\x1b[2J"..output.."\x1b[0m\n^^^ Output ^^^\nvvv Playing Field vvv\n"..shown.."\n"..showstack().."\nBall Position: {"..pos.x..", "..pos.y.."}\nBall Velocity: {"..vel.x..", "..vel.y.."}\nHit enter to advance")
         io.read()
     end
 
