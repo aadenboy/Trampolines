@@ -2,12 +2,12 @@
 -- physics based esolang :P
 
 -- ARGS:
-file    = arg[1]            -- directory | the file to open
-useANSI = arg[2] or true    -- boolean   | write "\x1B[2J\x1B[H" to console? (clears console, here just incase you will extract output)
-prompt  = arg[3] or true    -- boolean   | ask "AWAITING ASCII INPUT: " and or "AWAITING NUMBER INPUT: " when getting input?
-pcustom = arg[4] or true    -- boolean   | ask a custom prompt when getting input?
-pnum    = arg[5] or false   -- boolean   | print what's inputted after a default prompt, e.g if a 19 was inputted, should it print 19 and then a newline?
-pcnum   = arg[6] or false   -- boolean   | print what's inputted after a custom prompt?
+file    = arg[1]                            -- directory | the file to open
+useANSI = arg[2] == nil and true or arg[2]  -- boolean   | write "\x1B[2J\x1B[H" to console? (clears console, here just incase you will extract output)
+prompt  = arg[3] == nil and true or arg[3]  -- boolean   | ask "AWAITING ASCII INPUT: " and or "AWAITING NUMBER INPUT: " when getting input?
+pcustom = arg[4] == nil and true or arg[4]  -- boolean   | ask a custom prompt when getting input?
+pnum    = arg[5] == nil and false or arg[5] -- boolean   | print what's inputted after a default prompt, e.g if a 19 was inputted, should it print 19 and then a newline?
+pcnum   = arg[6] == nil and false or arg[6] -- boolean   | print what's inputted after a custom prompt?
 
 math.randomseed(os.time())
 
@@ -279,6 +279,7 @@ local collisions = {
     ["44"] = function() -- ,
         local custom = false
 
+
         if #strings[pos.y + 1] ~= 0 and pcustom then
             for _,v in ipairs(strings[pos.y + 1]) do
                 if v.x == pos.x + 2 then
@@ -288,37 +289,51 @@ local collisions = {
                 end
             end
 
+
             if not custom then
-                write(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
+                write(({"\nAWAITING NUMBER INPUT: ", "\nAWAITING CHAR INPUT: ", "AWAITING INPUT: "})[stackpointer])
             end
         else
             if prompt then
-                write(stackpointer == 1 and "\nAWAITING NUMBER INPUT: " or "\nAWAITING CHAR INPUT: ")
+                write(({"\nAWAITING NUMBER INPUT: ", "\nAWAITING CHAR INPUT: ", "AWAITING INPUT: "})[stackpointer])
             end
         end
 
+
         local input
+
 
         if stackpointer == 1 then
             repeat
                 input = io.read("*n")
             until tonumber(input) ~= nil
 
+
             push(stackpointer, input)
         elseif stackpointer == 2 then
             repeat
                 input = io.read()
             until input ~= nil
-            push(stackpointer, utf8.codepoint(input))
+
+
+            push(stackpointer, utf8.codepoint(input:sub(1, 1)))
         else
-            write("You can only use the \",\" command when selecting stacks 1-2.")
+            repeat
+                input = io.read()
+            until input ~= nil
+           
+            for c in string.gmatch(input:reverse(), "(.)") do
+                push(stackpointer, utf8.codepoint(c))
+            end
         end
+
 
         if (pnum and not custom) or (pcnum and custom) then
             write(input.."\n")
         else
             output = output..input.."\n"
         end
+
     end,
     ["60"] = function() -- <
         if retrieve(stackpointer, 2) >= retrieve(stackpointer) then
